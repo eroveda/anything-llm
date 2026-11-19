@@ -23,6 +23,26 @@ async function userCanToggleTools(userId = null) {
 }
 
 /**
+ * Removes attachments a `default` user may not send to the agent when
+ * DISABLE_DEFAULT_USER_ATTACHMENTS is set. Otherwise returns them unchanged.
+ * @param {number|null} userId - User id from the agent invocation.
+ * @param {any[]} attachments - Attachments sent with the feedback.
+ * @returns {Promise<any[]>}
+ */
+async function permittedAgentAttachments(userId = null, attachments = []) {
+  const {
+    allowedAttachments,
+    defaultUserAttachmentsDisabled,
+  } = require("../../../middleware/defaultUserAttachments");
+  if (!defaultUserAttachmentsDisabled()) return attachments;
+  const { SystemSettings } = require("../../../../models/systemSettings");
+  const { User } = require("../../../../models/user");
+  const multiUserMode = await SystemSettings.isMultiUserMode();
+  const user = userId ? await User.get({ id: Number(userId) }) : null;
+  return allowedAttachments(attachments, user, multiUserMode);
+}
+
+/**
  * Agent follow-ups arrive over the socket rather than the HTTP chat routes, so
  * the 24-hour message limit is checked here before each of the agent's turns.
  * Returns the quota message when the user is over their limit, otherwise null.
@@ -542,7 +562,10 @@ const websocket = {
           // apply it before the agent's next turn.
           if (reasoningEffort !== undefined)
             await aibitat.updateReasoningEffort?.(reasoningEffort);
-          await aibitat.continue(feedback, attachments);
+          await aibitat.continue(
+            feedback,
+            await permittedAgentAttachments(userId, attachments)
+          );
         });
 
         /**
@@ -630,6 +653,7 @@ const websocket = {
 
 module.exports = {
   websocket,
+  permittedAgentAttachments,
   WEBSOCKET_BAIL_COMMANDS,
   notifySessionExited,
   toolApprovalTimeoutMs,

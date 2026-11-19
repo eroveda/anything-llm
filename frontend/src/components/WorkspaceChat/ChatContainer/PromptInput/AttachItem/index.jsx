@@ -11,6 +11,7 @@ import {
 } from "../../DnDWrapper";
 import { useTheme } from "@/hooks/useTheme";
 import ParsedFilesMenu from "./ParsedFilesMenu";
+import useCanAttachFiles from "@/hooks/useCanAttachFiles";
 
 /**
  * This is a simple proxy component that clicks on the DnD file uploader for the user.
@@ -32,6 +33,7 @@ export default function AttachItem({
   const [contextWindow, setContextWindow] = useState(Infinity);
   const [showTooltip, setShowTooltip] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const canAttach = useCanAttachFiles();
 
   const fetchFiles = () => {
     if (!slug) return;
@@ -87,6 +89,8 @@ export default function AttachItem({
       );
     };
   }, [slug, threadSlug]);
+
+  if (!canAttach) return null;
 
   return (
     <>

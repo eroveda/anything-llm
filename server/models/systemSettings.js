@@ -478,6 +478,8 @@ const SystemSettings = {
       JWTSecret: !!process.env.JWT_SECRET,
       StorageDir: process.env.STORAGE_DIR,
       MultiUserMode: await this.isMultiUserMode(),
+      DefaultUserAttachmentsDisabled:
+        "DISABLE_DEFAULT_USER_ATTACHMENTS" in process.env,
       MemoryEnabled: await this.memoriesEnabled(),
       MemoryAutoExtraction: await this.memoryAutoExtractionSetting(),
       DisableTelemetry: process.env.DISABLE_TELEMETRY || "false",

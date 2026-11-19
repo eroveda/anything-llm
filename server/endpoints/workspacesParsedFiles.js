@@ -11,6 +11,9 @@ const { validWorkspaceSlug } = require("../utils/middleware/validWorkspace");
 const { CollectorApi } = require("../utils/collectorApi");
 const { WorkspaceThread } = require("../models/workspaceThread");
 const { WorkspaceParsedFiles } = require("../models/workspaceParsedFiles");
+const {
+  blockDefaultUserAttachments,
+} = require("../utils/middleware/defaultUserAttachments");
 
 function workspaceParsedFilesEndpoints(app) {
   if (!app) return;
@@ -153,6 +156,7 @@ function workspaceParsedFilesEndpoints(app) {
     [
       validatedRequest,
       flexUserRoleValid([ROLES.all]),
+      blockDefaultUserAttachments,
       handleFileUpload,
       validWorkspaceSlug,
     ],

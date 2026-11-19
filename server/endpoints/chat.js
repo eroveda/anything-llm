@@ -16,6 +16,9 @@ const { writeResponseChunk } = require("../utils/helpers/chat/responses");
 const { WorkspaceThread } = require("../models/workspaceThread");
 const { User } = require("../models/user");
 const { getModelTag } = require("./utils");
+const {
+  allowedAttachments,
+} = require("../utils/middleware/defaultUserAttachments");
 
 function chatEndpoints(app) {
   if (!app) return;
@@ -28,9 +31,14 @@ function chatEndpoints(app) {
         const user = await userFromSession(request, response);
         const {
           message,
-          attachments = [],
+          attachments: requestedAttachments = [],
           reasoningEffort = null,
         } = reqBody(request);
+        const attachments = allowedAttachments(
+          requestedAttachments,
+          user,
+          multiUserMode(response)
+        );
         const workspace = response.locals.workspace;
 
         if (typeof message !== "string" || message.trim().length === 0) {
@@ -119,9 +127,14 @@ function chatEndpoints(app) {
         const user = await userFromSession(request, response);
         const {
           message,
-          attachments = [],
+          attachments: requestedAttachments = [],
           reasoningEffort = null,
         } = reqBody(request);
+        const attachments = allowedAttachments(
+          requestedAttachments,
+          user,
+          multiUserMode(response)
+        );
         const workspace = response.locals.workspace;
         const thread = response.locals.thread;
 

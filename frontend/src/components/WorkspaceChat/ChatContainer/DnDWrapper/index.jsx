@@ -7,6 +7,7 @@ import Workspace from "@/models/workspace";
 import showToast from "@/utils/toast";
 import FileUploadWarningModal from "./FileUploadWarningModal";
 import EmbeddingProgressModal from "./EmbeddingProgressModal";
+import useCanAttachFiles from "@/hooks/useCanAttachFiles";
 import {
   EmbeddingProgressProvider,
   useEmbeddingProgress,
@@ -78,6 +79,10 @@ function DnDFileUploader({ workspace, threadSlug, children }) {
   const [maxTokens, setMaxTokens] = useState(Number.POSITIVE_INFINITY);
   const { embeddingProgressMap, startEmbedding } = useEmbeddingProgress();
   const embeddingProgress = embeddingProgressMap[workspace.slug] || null;
+  const canAttach = useCanAttachFiles();
+  // The paste listener is registered once, so it reads the latest value here.
+  const canAttachRef = useRef(canAttach);
+  canAttachRef.current = canAttach;
   const lastEmbeddingProgressRef = useRef(null);
 
   useEffect(() => {
@@ -174,7 +179,7 @@ function DnDFileUploader({ workspace, threadSlug, children }) {
    */
   async function handlePastedAttachment(event) {
     const { files = [], storageFilename = null } = event.detail;
-    if (!files.length) return;
+    if (!files.length || !canAttachRef.current) return;
     const newAccepted = [];
     for (const file of files) {
       if (file.type.startsWith("image/")) {
@@ -209,6 +214,7 @@ function DnDFileUploader({ workspace, threadSlug, children }) {
    */
   async function onDrop(acceptedFiles, _rejections) {
     setDragging(false);
+    if (!canAttach) return;
 
     /** @type {Attachment[]} */
     const newAccepted = [];
@@ -500,7 +506,15 @@ function DnDFileUploader({ workspace, threadSlug, children }) {
 
   return (
     <DndUploaderContext.Provider
-      value={{ files, ready, dragging, setDragging, onDrop, parseAttachments }}
+      value={{
+        files,
+        ready,
+        canAttach,
+        dragging,
+        setDragging,
+        onDrop,
+        parseAttachments,
+      }}
     >
       <FileUploadWarningModal
         show={showWarningModal}
@@ -522,11 +536,11 @@ function DnDFileUploader({ workspace, threadSlug, children }) {
 }
 
 export default function DnDFileUploaderWrapper({ children }) {
-  const { onDrop, ready, dragging, setDragging } =
+  const { onDrop, ready, canAttach, dragging, setDragging } =
     useContext(DndUploaderContext);
   const { getRootProps, getInputProps } = useDropzone({
     onDrop,
-    disabled: !ready,
+    disabled: !ready || !canAttach,
     noClick: true,
     noKeyboard: true,
     onDragEnter: () => setDragging(true),

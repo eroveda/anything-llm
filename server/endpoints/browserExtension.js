@@ -22,6 +22,9 @@ const { Telemetry } = require("../models/telemetry");
 const { User } = require("../models/user");
 const { ApiChatHandler } = require("../utils/chats/apiChatHandler");
 const {
+  allowedAttachments,
+} = require("../utils/middleware/defaultUserAttachments");
+const {
   writeResponseChunk,
   convertToChatHistory,
 } = require("../utils/helpers/chat/responses");
@@ -333,7 +336,11 @@ function browserExtensionEndpoints(app) {
           message,
           user,
           thread,
-          attachments: Array.isArray(attachments) ? attachments : [],
+          attachments: allowedAttachments(
+            attachments,
+            user,
+            multiUserMode(response)
+          ),
           contextDocuments: pagesToContextDocuments(context),
           userSlashCommands: true,
           agentEventListener: listener,
