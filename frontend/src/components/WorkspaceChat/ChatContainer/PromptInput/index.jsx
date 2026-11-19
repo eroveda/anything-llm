@@ -20,6 +20,7 @@ import ToolsMenu, { TOOLS_MENU_KEYBOARD_EVENT } from "./ToolsMenu";
 import { useSearchParams } from "react-router-dom";
 import { useIsAgentSessionActive } from "@/utils/chat/agent";
 import { isMobile } from "react-device-detect";
+import useDefaultUserPermissions from "@/hooks/useDefaultUserPermissions";
 
 export const PROMPT_INPUT_ID = "primary-prompt-input";
 export const PROMPT_INPUT_EVENT = "set_prompt_input";
@@ -51,6 +52,7 @@ export default function PromptInput({
   const { showAgentCommand = true } = workspace ?? {};
   const { isDisabled } = useIsDisabled();
   const agentSessionActive = useIsAgentSessionActive();
+  const { canUseAgents } = useDefaultUserPermissions();
   const [promptInput, setPromptInput] = useState("");
   const [showTools, setShowTools] = useState(false);
   const autoOpenedToolsRef = useRef(false);
@@ -388,7 +390,9 @@ export default function PromptInput({
                       sendCommand={sendCommand}
                       promptInput={promptInput}
                       textareaRef={textareaRef}
-                      visible={!agentSessionActive & showAgentCommand}
+                      visible={
+                        !agentSessionActive && showAgentCommand && canUseAgents
+                      }
                     />
                     <ReasoningEffortButton
                       workspaceSlug={workspaceSlug ?? workspace?.slug}

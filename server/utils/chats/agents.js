@@ -4,6 +4,11 @@ const {
 } = require("../../models/workspaceAgentInvocation");
 const { writeResponseChunk } = require("../helpers/chat/responses");
 const { Workspace } = require("../../models/workspace");
+const {
+  AGENTS_BLOCKED_MESSAGE,
+  agentsBlockedForUser,
+  agentsBlockedForUserLookup,
+} = require("../middleware/defaultUserAgents");
 
 /**
  * Most entries each invocation cache may hold. Entries are deleted as soon as
@@ -85,13 +90,33 @@ async function grepAgents({
   reasoningEffort = null,
 }) {
   let nativeToolingEnabled = false;
+  const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
+
+  // DISABLE_DEFAULT_USER_AGENTS: default users never reach the agent flow.
+  // Explicit @agent calls get a notice; everything else is regular chat.
+  const agentsBlocked =
+    response?.locals?.multiUserMode === undefined
+      ? await agentsBlockedForUserLookup(user)
+      : agentsBlockedForUser(user, response.locals.multiUserMode);
+  if (agentsBlocked) {
+    if (agentHandles.length === 0) return false;
+    writeResponseChunk(response, {
+      id: uuid,
+      type: "statusResponse",
+      textResponse: AGENTS_BLOCKED_MESSAGE,
+      sources: [],
+      close: true,
+      animate: false,
+      error: null,
+    });
+    return true;
+  }
 
   // If the workspace is in automatic mode, check if the workspace supports native tooling
   // to determine if the agent flow should be used or not.
   if (workspace?.chatMode === "automatic")
     nativeToolingEnabled = await Workspace.supportsNativeToolCalling(workspace);
 
-  const agentHandles = WorkspaceAgentInvocation.parseAgents(message);
   if (agentHandles.length > 0 || nativeToolingEnabled) {
     const { invocation: newInvocation } = await WorkspaceAgentInvocation.new({
       prompt: message,

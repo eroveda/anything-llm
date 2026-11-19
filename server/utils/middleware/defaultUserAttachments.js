@@ -7,11 +7,9 @@
  * Like WORKSPACE_DELETION_PROTECTION, this is a deployment-level switch so the
  * instance admin cannot turn it off from the UI.
  */
-const ENV_KEY = "DISABLE_DEFAULT_USER_ATTACHMENTS";
+const { restrictedForDefaultUser } = require("./defaultUserRestrictions");
 
-// Mirrors ROLES.admin and ROLES.manager in ./multiUserProtected. Kept local so
-// this module has no database dependency.
-const ROLES_ALLOWED_TO_ATTACH = ["admin", "manager"];
+const ENV_KEY = "DISABLE_DEFAULT_USER_ATTACHMENTS";
 
 const BLOCKED_ERROR =
   "Attaching files is disabled for your account by the system administrator.";
@@ -26,8 +24,7 @@ function defaultUserAttachmentsDisabled() {
  * @returns {boolean} true when this user may not attach files.
  */
 function attachmentsBlockedForUser(user = null, multiUserMode = false) {
-  if (!defaultUserAttachmentsDisabled() || !multiUserMode) return false;
-  return !ROLES_ALLOWED_TO_ATTACH.includes(user?.role);
+  return restrictedForDefaultUser(ENV_KEY, user, multiUserMode);
 }
 
 /**

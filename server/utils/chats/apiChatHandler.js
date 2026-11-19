@@ -17,6 +17,9 @@ const {
   EphemeralEventListener,
 } = require("../agents/ephemeral");
 const { Telemetry } = require("../../models/telemetry");
+const {
+  agentsBlockedForUserLookup,
+} = require("../middleware/defaultUserAgents");
 const { CollectorApi } = require("../collectorApi");
 const fs = require("fs");
 const path = require("path");
@@ -189,11 +192,12 @@ async function chatSync({
   attachments = imageAttachments;
 
   if (
-    await EphemeralAgentHandler.isAgentInvocation({
+    !(await agentsBlockedForUserLookup(user)) &&
+    (await EphemeralAgentHandler.isAgentInvocation({
       message,
       workspace,
       chatMode,
-    })
+    }))
   ) {
     await Telemetry.sendTelemetry("agent_chat_started");
 
@@ -578,11 +582,12 @@ async function streamChat({
   attachments = imageAttachments;
 
   if (
-    await EphemeralAgentHandler.isAgentInvocation({
+    !(await agentsBlockedForUserLookup(user)) &&
+    (await EphemeralAgentHandler.isAgentInvocation({
       message,
       workspace,
       chatMode,
-    })
+    }))
   ) {
     await Telemetry.sendTelemetry("agent_chat_started");
 

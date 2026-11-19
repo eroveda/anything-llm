@@ -480,6 +480,7 @@ const SystemSettings = {
       MultiUserMode: await this.isMultiUserMode(),
       DefaultUserAttachmentsDisabled:
         "DISABLE_DEFAULT_USER_ATTACHMENTS" in process.env,
+      DefaultUserAgentsDisabled: "DISABLE_DEFAULT_USER_AGENTS" in process.env,
       MemoryEnabled: await this.memoriesEnabled(),
       MemoryAutoExtraction: await this.memoryAutoExtractionSetting(),
       DisableTelemetry: process.env.DISABLE_TELEMETRY || "false",
